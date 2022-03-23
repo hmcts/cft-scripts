@@ -1,0 +1,57 @@
+#!/usr/bin/env zx
+
+const [_, email, roles, password = "Pa55word11", group = "caseworker", forename = "forename", surname = "surname"] = argv._;
+const isMissingRequiredArg = [email, roles, password, group, surname, forename].some(value => value === undefined);
+const env = ["aat", "demo", "prod", "ithc"].includes(process.env.ENV) ? process.env.ENV : "aat";
+
+if (isMissingRequiredArg || argv.help) {
+  console.log(`
+Usage: zx https://sh.hmcts.co.uk/idam/create-user email roles [password] [group] [forename] [surname]
+
+Options:
+   - email: Email address
+   - roles: Comma-separated list of roles. Roles must exist in IDAM (i.e \`caseworker-divorce,caseworker-divorce-admin\`)
+   - password: User's password. Default to \`Pa55word11\`. Weak passwords that do not match the password criteria by IDAM will cause use creation to fail, and such failure may not be expressly communicated to the user.
+   - group: caseworker or citizen. Defaults to \`caseworker\`
+   - forename: First name. Default to \`forename\`.
+   - surname: Last name. Default to \`surname\`.
+   
+Environment variables:
+
+  - ENV: Set the environment to aat, demo, perftest or ithc. Defaults to aat
+  `);
+  process.exit(0);
+}
+
+const idamUrl = `https://idam-api.${env}.platform.hmcts.net/testing-support/accounts`;
+
+console.log(`Environment: ${env}`);
+
+await fetch(`${idamUrl}/${email}`, { method: "delete" });
+
+const body = {
+  email,
+  forename,
+  surname,
+  password,
+  levelOfAccess: 1,
+  userGroup: { code: group },
+  roles: roles.split(",").map(role => ({ code: role}))
+};
+
+const response = await fetch(idamUrl, {
+  method: "post",
+  body: JSON.stringify(body),
+  headers: {
+    "Content-type": "application/json"
+  }
+});
+
+if (response.ok) {
+  console.log(`User: ${email} created with roles: ${roles}`);
+} else {
+  console.log(`User creation failed: ${response.status} ${response.statusText}`);
+  const responseBody = await response.text();
+  console.log(`Body: ${responseBody}`);
+  process.exit(-1);
+}
