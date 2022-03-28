@@ -3,7 +3,7 @@ $.verbose = false;
 
 const [_, email, roles, password = "Pa55word11", group = "caseworker", forename = "forename", surname = "surname"] = argv._;
 const isMissingRequiredArg = [email, roles, password, group, surname, forename].some(value => value === undefined);
-const env = ["aat", "demo", "prod", "ithc"].includes(process.env.ENV) ? process.env.ENV : "aat";
+const env = ["aat", "demo", "perftest", "ithc"].includes(process.env.ENV) ? process.env.ENV : "aat";
 
 if (isMissingRequiredArg || argv.help) {
   console.log(`
